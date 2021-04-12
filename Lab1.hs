@@ -35,9 +35,9 @@ findMinSubArray :: [(Int,Int)]->[Int]->(Int,Int) -- findMinSubArray(pairs of tup
 findMinSubArray [] array = (0,0)
 findMinSubArray (x:xs) array = minOfTwoArrays x (findMinSubArray xs array) array
 
-formatConversion :: [(Int,Int)]->[Int]->[((Int,Int), [Int])]
+formatConversion :: [(Int,Int)]->[Int]->String
 formatConversion [] array = []
-formatConversion (x:xs) array = [(x,drop (fst x) (take ((snd x) + 1) array) )] ++ formatConversion xs array
+formatConversion (x:xs) array = "Size \t" ++ "13 \t" ++ "i, j \t " ++ show (fst x) ++ "," ++ show (snd x) ++ " \t SubList \t" ++ show (drop (fst x) (take ((snd x) + 1) array)) ++ "\n" ++ formatConversion xs array
 
 --Returns the k smallest tuple pairs which returns the smallest sums
 getKSmallestIndexPairs:: [(Int,Int)]->[Int]->Int->[(Int,Int)] --kSmallest(all possibles subarrays index, array, k) -> List of tuples: (size, sublist, i, j)
@@ -46,5 +46,5 @@ getKSmallestIndexPairs subArrs array k
     |otherwise  = []
 
 --Trying to make the getKSmallestIndexPairscall prettier, calls kSmallest
-kSmallestSubList :: [Int]->Int->[((Int,Int),[Int])]
+kSmallestSubList :: [Int]->Int->String
 kSmallestSubList array k = formatConversion (getKSmallestIndexPairs(subArrays 0 0 array) array k) array
