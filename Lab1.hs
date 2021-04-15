@@ -1,8 +1,10 @@
 import Data.List
 import System.IO
-
+-- Tom Brander (tombra-7)
+test0 :: [Int]
 test1 :: [Int]
 test2 :: [Int]
+test0 = [-1,2,-3,4,-5]
 test1 = [x*(-1)^x | x <- [1..100]]
 test2 = [24,-11,-34,42,-24,7,-19,21]
 --Returns the sum of all elements in the input list
@@ -11,12 +13,12 @@ listSum [] = 0
 listSum (x:xs) = x + listSum xs
 
 --Returns the index pair which results the minimum sum of 2 pairs in the array
-minOfTwoArrays:: (Int,Int)->(Int,Int)->[Int]->(Int,Int)
+minOfTwoArrays:: (Int,Int)->(Int,Int)->[Int]->(Int,Int) --minOfTwoArrays((i,j),(k,l),array)
 minOfTwoArrays a b array
     | listSum ( drop (fst a) (take ( (snd a) + 1) array) ) < listSum ( drop (fst b) (take ( (snd b) + 1) array) )     = a
     | otherwise                 = b
 
---Removes one tuple of a tuples list
+--Removes one tuple of a tuples list (FOUND ON STACK)
 removeItem :: (Int,Int)->[(Int,Int)]->[(Int,Int)]
 removeItem _ [] = []
 removeItem x (y:ys) |x==y       =removeItem x ys
