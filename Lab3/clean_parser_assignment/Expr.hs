@@ -73,12 +73,20 @@ shw prec (Div t u) = parens (prec>6) (shw 6 t ++ "/" ++ shw 7 u)
 --------------------------VALUE------------------------
 value :: Expr -> Dictionary.T String Integer -> Integer
 value (Num n) _ = n
-value (Var n) dict
-        | x == Nothing          = error("Expr.value: undefined variable" ++ n)
-        | otherwise             = x::Integer
-        where x = (Dictionary.lookup n dict)
---value (div e1 e2) dict --Cannot divid by 0
---value (_ e1 e2) dict =1
+value (Var n) dict =
+        case Dictionary.lookup n dict of
+                Nothing->error ("Expr.value: undefined variable "++n)
+                Just(a)-> a
+
+value (Div e1 e2) dict = 
+        case value e2 dict of
+                a -> 
+                        if (show a == "0") 
+                        then error ("Expr.value: division by 0") 
+                        else div (value e1 dict) (value e2 dict)
+value (Add e1 e2) dict = (value e1 dict) + (value e2 dict)
+value (Sub e1 e2) dict = (value e1 dict) - (value e2 dict)
+value (Mul e1 e2) dict = (value e1 dict) * (value e2 dict)
 --value (Num n) _ = error "value not implemented"
 -------------------------------------------------------
 
