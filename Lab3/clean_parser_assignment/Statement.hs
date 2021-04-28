@@ -1,3 +1,4 @@
+--Tom Brander (tombra-7)
 module Statement(T, parse, toString, fromString, exec) where
 import Prelude hiding (return, fail)
 import Parser hiding (T)
@@ -64,6 +65,18 @@ exec (Repeat s e :stmts) dict input =
     then exec (s:(Repeat s e):stmts) dict input
     else exec (s:stmts) dict input
 
+
+show::T->String
+show(Assignment str e1) = str ++ ":=" ++Expr.toString e1 ++ "; \n"
+show(If e1 s1 s2) = "if " ++ Expr.toString e1 ++ " then\n" ++ toString s1 ++ "else \n" ++ toString s2
+show(Skip) = "skip; \n"
+show(Read str) = "read " ++ str ++ ";\n"
+show(Write e1) = "write " ++ Expr.toString e1 ++ ";\n"
+show(While e1 s1) = "while " ++ Expr.toString e1 ++ ":\n" ++ toString s1
+show(Begin list) = "begin \n" ++ (foldr (++) "" (map toString list)) ++ "end \n"
+show(Repeat s1 e1) = "repeat: \n" ++ toString s1 ++ "until " ++ Expr.toString e1 ++ ";\n"
+
+
 instance Parse Statement where
   parse = assignment ! skip ! Statement.read ! write ! while ! begin ! ifStatement ! Statement.repeat
-  toString = show
+  toString s = Statement.show s
