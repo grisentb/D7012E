@@ -153,8 +153,7 @@ printList([H | L]) :-
 %% define moves(Plyr,State,MvList). 
 %   - returns list MvList of all legal moves Plyr can make in State
 %
-moves(Plyr, State, MvList):- findall(Move, validmove(Plyr, State, Move), MvList).
-
+moves(Plyr, State, MvList):- findall(Move, validmove(Plyr, State, Move), Moves), my_sort(Moves,MvList).
 
 
 
@@ -166,10 +165,11 @@ moves(Plyr, State, MvList):- findall(Move, validmove(Plyr, State, Move), MvList)
 %   - given that Plyr makes Move in State, it determines NewState (i.e. the next 
 %     state) and NextPlayer (i.e. the next player who will move).
 %
-nextState(Plyr, Move, State, NewState, NextPlyr):- set(State, NewState, Move, Plyr), opponent(Plyr, NextPlyr).
+nextState(Plyr, Move, State, NewState, NextPlyr):- opponent(Plyr, Opponent), setMove(Plyr, Opponent, State, NewState), (moves(Opponent, NewState, MvList), MvList \= [], NextPlyr is Opponent); NextPlyr is Plyr.
 
-
-
+%setMove(Plyr, Opponent, State, NewState):- 
+setAll([], State, State, _).
+setAll([Disk|Disks], State, NewState, Plyr):- set(State, NS, Disk, Plyr), setAll(Disks, NS, NewState, Plyr).
 
 % DO NOT CHANGE THIS BLOCK OF COMMENTS.
 %
@@ -177,21 +177,28 @@ nextState(Plyr, Move, State, NewState, NextPlyr):- set(State, NewState, Move, Pl
 %% 
 %% define validmove(Plyr,State,Proposed). 
 %   - true if Proposed move by Plyr is valid at State.
-%validmove(1, State, Proposed):- 
-validmove(Plyr, State, Proposed):- testmove(Proposed, Plyr, State).
 
-testmove([X,Y], Plyr, State):- get(State, [X,Y], V), V == '.', opponent(Plyr, Opponent), X1 is X + 1, get(State, [X1,Y], O), O == Opponent, sequenceWithEnd(State, [X1,Y], 1, 0, Plyr, Opponent), writeln('H').
-testmove([X,Y], Plyr, State):- get(State, [X,Y], V), V == '.', opponent(Plyr, Opponent), X1 is X - 1, get(State, [X1,Y], O), O == Opponent, sequenceWithEnd(State, [X1,Y], -1, 0, Plyr, Opponent), writeln('V').
-testmove([X,Y], Plyr, State):- get(State, [X,Y], V), V == '.', opponent(Plyr, Opponent), Y1 is Y + 1, get(State, [X,Y1], O), O == Opponent, sequenceWithEnd(State, [X,Y1], 0, 1, Plyr, Opponent), writeln('N').
-testmove([X,Y], Plyr, State):- get(State, [X,Y], V), V == '.', opponent(Plyr, Opponent), Y1 is Y - 1, get(State, [X,Y1], O), O == Opponent, sequenceWithEnd(State, [X,Y1], 0, -1, Plyr, Opponent), writeln('U').
-testmove([X,Y], Plyr, State):- get(State, [X,Y], V), V == '.', opponent(Plyr, Opponent), X1 is X + 1, Y1 is Y + 1, get(State, [X1,Y1], O), O == Opponent, sequenceWithEnd(State, [X1,Y1], 1, 1, Plyr, Opponent), writeln('NH').
-testmove([X,Y], Plyr, State):- get(State, [X,Y], V), V == '.', opponent(Plyr, Opponent), X1 is X + 1, Y1 is Y - 1, get(State, [X1,Y1], O), O == Opponent, sequenceWithEnd(State, [X1,Y1], 1, -1, Plyr, Opponent), writeln('UH').
-testmove([X,Y], Plyr, State):- get(State, [X,Y], V), V == '.', opponent(Plyr, Opponent), X1 is X - 1, Y1 is Y + 1, get(State, [X1,Y1], O), O == Opponent,sequenceWithEnd(State, [X1,Y1], -1, 1, Plyr, Opponent), writeln('NV').
-testmove([X,Y], Plyr, State):- get(State, [X,Y], V), V == '.', opponent(Plyr, Opponent), X1 is X - 1, Y1 is Y - 1, get(State, [X1,Y1], O), O == Opponent,sequenceWithEnd(State, [X1,Y1], -1, -1, Plyr, Opponent), writeln('UV').	
+validmove(Plyr, State, Proposed):- testEast(Proposed, Plyr, State, _);
+	 							testWest(Proposed, Plyr, State, _);
+								testSouth(Proposed, Plyr, State, _); 
+								testNorth(Proposed, Plyr, State, _);
+								testSouthEast(Proposed, Plyr, State, _);
+								testSouthWest(Proposed, Plyr, State, _);
+								testNorthEast(Proposed, Plyr, State, _);
+								testNorthWest(Proposed, Plyr, State, _).
 
-sequenceWithEnd(State, [X,Y], _, _, _, StopN):- write([X,Y]), get(State, [X,Y],V), V==StopN.
-sequenceWithEnd(State, [X,Y], XS, YS, SeqN, StopN):- write([X,Y]), get(State, [X,Y],V), V==SeqN, X1 is X + XS, Y1 is Y + YS, sequenceWithEnd(State, [X1,Y1], XS,YS, SeqN, StopN).
+testEast([X,Y], Plyr, State, Disks):- get(State, [X,Y], V), V == '.', opponent(Plyr, Opponent), X1 is X + 1, get(State, [X1,Y], O), O == Opponent, sequenceWithEnd(State, [X1,Y], 1, 0, Opponent, Plyr, Disks). %East
+testWest([X,Y], Plyr, State, Disks):- get(State, [X,Y], V), V == '.', opponent(Plyr, Opponent), X1 is X - 1, get(State, [X1,Y], O), O == Opponent, sequenceWithEnd(State, [X1,Y], -1, 0, Opponent, Plyr, Disks). %West
+testSouth([X,Y], Plyr, State, Disks):- get(State, [X,Y], V), V == '.', opponent(Plyr, Opponent), Y1 is Y + 1, get(State, [X,Y1], O), O == Opponent, sequenceWithEnd(State, [X,Y1], 0, 1, Opponent, Plyr, Disks). %South
+testNorth([X,Y], Plyr, State, Disks):- get(State, [X,Y], V), V == '.', opponent(Plyr, Opponent), Y1 is Y - 1, get(State, [X,Y1], O), O == Opponent, sequenceWithEnd(State, [X,Y1], 0, -1, Opponent, Plyr, Disks). %North
+testSouthEast([X,Y], Plyr, State, Disks):- get(State, [X,Y], V), V == '.', opponent(Plyr, Opponent), X1 is X + 1, Y1 is Y + 1, get(State, [X1,Y1], O), O == Opponent, sequenceWithEnd(State, [X1,Y1], 1, 1, Opponent, Plyr, Disks). %SouthEast
+testNorthEast([X,Y], Plyr, State, Disks):- get(State, [X,Y], V), V == '.', opponent(Plyr, Opponent), X1 is X + 1, Y1 is Y - 1, get(State, [X1,Y1], O), O == Opponent, sequenceWithEnd(State, [X1,Y1], 1, -1, Opponent, Plyr, Disks). %NorthEast
+testSouthWest([X,Y], Plyr, State, Disks):- get(State, [X,Y], V), V == '.', opponent(Plyr, Opponent), X1 is X - 1, Y1 is Y + 1, get(State, [X1,Y1], O), O == Opponent,sequenceWithEnd(State, [X1,Y1], -1, 1, Opponent, Plyr, Disks). %SouthWest
+testNorthWest([X,Y], Plyr, State, Disks):- get(State, [X,Y], V), V == '.', opponent(Plyr, Opponent), X1 is X - 1, Y1 is Y - 1, get(State, [X1,Y1], O), O == Opponent,sequenceWithEnd(State, [X1,Y1], -1, -1, Opponent, Plyr, Disks).	%NorthWest
 
+
+sequenceWithEnd(State, [X,Y], _, _, _, StopN, []):- get(State, [X,Y],V), V==StopN.
+sequenceWithEnd(State, [X,Y], XS, YS, SeqN, StopN, [[X,Y]|Disks]):- get(State, [X,Y],V), V==SeqN, X1 is X + XS, Y1 is Y + YS, sequenceWithEnd(State, [X1,Y1], XS,YS, SeqN, StopN, Disks).
 % DO NOT CHANGE THIS BLOCK OF COMMENTS.
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%h(State,Val)%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -203,7 +210,6 @@ sequenceWithEnd(State, [X,Y], XS, YS, SeqN, StopN):- write([X,Y]), get(State, [X
 %   NOTE2. If State is not terminal h should be an estimate of
 %          the value of state (see handout on ideas about
 %          good heuristics.
-
 
 
 
@@ -331,3 +337,11 @@ setInList( [Element|RestList], [Element|NewRestList], Index, Value) :-
 	Index1 is Index-1, 
 	setInList( RestList, NewRestList, Index1, Value). 
  
+
+my_sort(List,Sorted):- i_sort(List,[],Sorted).
+i_sort([],Acc,Acc).
+i_sort([[A,B]|T],Acc,Sorted):-insert([A,B],Acc,NAcc),i_sort(T,NAcc,Sorted).
+
+insert([A1,A2],[[B1,B2]|T],[[B1,B2]|NT]):- (A1>B1;(A1==B1, A2>B2)),insert([A1,A2],T,NT).
+insert([A1,A2],[[B1,B2]|T],[[A1,A2],[B1,B2]|T]):- B1>A1;(B1==A1, B2>A2).
+insert(X,[],[X]).
