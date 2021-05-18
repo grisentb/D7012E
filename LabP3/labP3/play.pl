@@ -178,8 +178,8 @@ mmeval(1,St,Val,BestMv,D,SeF) :-
  
 mmeval(2,St,Val,BestMv,D,SeF) :- 
   moves(2,St,MvList), !,
-% length(MvList,L), 
-% write('Evaluating '), write(L), write(' moves for Plyr 2 at depth '), writeln(D), 
+  %length(MvList,L), 
+  %write('Evaluating '), write(L), write(' moves for Plyr 2 at depth '), writeln(D), 
   upperBound(B), % a value strictly less than worst value max can get 
   evalMoves(2,St,MvList,B,null,Val,BestMv,D,0,SeI), % Best so far set to upperbnd 
   SeF is SeI + 1. 
@@ -210,7 +210,7 @@ evalMoves(_,_,[],Val,BestMv,Val,BestMv,_,Se,Se) :- !.
 
 evalMoves(1,St,[Mv|Rest],ValSoFar,MvSoFar,Val,BestMv,D,Se,SeF) :- 
   nextState(1,Mv,St,NewSt,NextPlyr), !,
-%  write('evalMoves 1: '), write(Mv), write(' D='), write(D), write(' S='), write(Se), showState(NewSt),
+  write('evalMoves 1: '), write(Mv), write(' D='), write(D), write(' S='), write(Se), showState(NewSt),
   Dnew is D - 1, 
   mmeval(NextPlyr,NewSt,MvVal,_,Dnew,SeI), !,
   maxMove(ValSoFar,MvSoFar,MvVal,Mv,NewValSoFar,NewMvSoFar), 
@@ -220,7 +220,7 @@ evalMoves(1,St,[Mv|Rest],ValSoFar,MvSoFar,Val,BestMv,D,Se,SeF) :-
  
 evalMoves(2,St,[Mv|Rest],ValSoFar,MvSoFar,Val,BestMv,D,Se,SeF) :- 
   nextState(2,Mv,St,NewSt,NextPlyr), !,
-%  write('evalMoves 2: '), write(Mv), write(' D='), write(D), write(' S='), write(Se), showState(NewSt),
+  write('evalMoves 2: '), write(Mv), write(' D='), write(D), write(' S='), write(Se), showState(NewSt),
   Dnew is D - 1, 
   mmeval(NextPlyr,NewSt,MvVal,_,Dnew,SeI),  !,
   minMove(ValSoFar,MvSoFar,MvVal,Mv,NewValSoFar,NewMvSoFar), 

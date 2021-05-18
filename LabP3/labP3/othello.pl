@@ -8,10 +8,12 @@
 %
 /* ------------------------------------------------------- */
 
-
+%Tom Brander (tombra-7)
 
 %do not chagne the follwoing line!
-:- ensure_loaded('play.pl').
+%:- ensure_loaded('play.pl').
+:- ensure_loaded('testboards.pl').
+:- ensure_loaded('stupid.pl').
 :- set_prolog_flag(answer_write_options,[max_depth(0)]).
 
 % DO NOT CHANGE THIS BLOCK OF COMMENTS.
@@ -82,7 +84,7 @@ initBoard([ [.,.,.,.,.,.],
 %%%  holds iff InitialState is the initial state and 
 %%%  InitialPlyr is the player who moves first. 
 
-initialize(initBoard, 2).
+initialize(InitialState, 1) :- initBoard(InitialState), writeln('Initializing').
 
 
 
@@ -100,8 +102,8 @@ count([[S|Tail]|Rows], X, O) :-
 	(S==2, count([Tail|Rows], X, O1), O is O1 + 1 );
 	(S=='.',count([Tail|Rows], X, O)).
 
-winner(State, Plyr):- terminal(State), count(State, X, O), X>O, Plyr is 2, writeln('Player 2 wins!').
-winner(State, Plyr):- terminal(State), count(State, X, O), X<O, Plyr is 1, writeln('Player 1 wins!').
+winner(State, Plyr):- terminal(State), count(State, X, O), X>O, Plyr is 2.
+winner(State, Plyr):- terminal(State), count(State, X, O), X<O, Plyr is 1.
 
 % DO NOT CHANGE THIS BLOCK OF COMMENTS.
 %
@@ -110,7 +112,7 @@ winner(State, Plyr):- terminal(State), count(State, X, O), X<O, Plyr is 1, write
 %% define tie(State) here. 
 %    - true if terminal State is a "tie" (no winner) 
 
-tie(State):- terminal(State), count(State, X, O), X==O, writeln('Game ended in a tie!').
+tie(State):- terminal(State), count(State, X, O), X==O.
 
 
 
@@ -121,7 +123,7 @@ tie(State):- terminal(State), count(State, X, O), X==O, writeln('Game ended in a
 %% define terminal(State). 
 %   - true if State is a terminal   
 
-terminal(State):- moves(0, State, MvList0), moves(1, State, MvList1), MvList0 == [], MvList1 == [].
+terminal(State):- moves(1, State, MvList0), moves(2, State, MvList1), MvList0 == [], MvList1 == [].
 
 
 
@@ -153,7 +155,7 @@ printList([H | L]) :-
 %% define moves(Plyr,State,MvList). 
 %   - returns list MvList of all legal moves Plyr can make in State
 %
-moves(Plyr, State, MvList):- findall(Move, validmove(Plyr, State, Move), Moves), my_sort(Moves,MvList).
+moves(Plyr, State, MvList):- findall(Move, validmove(Plyr, State, Move), Moves), sort(Moves,MvList), !.
 
 
 
@@ -165,9 +167,22 @@ moves(Plyr, State, MvList):- findall(Move, validmove(Plyr, State, Move), Moves),
 %   - given that Plyr makes Move in State, it determines NewState (i.e. the next 
 %     state) and NextPlayer (i.e. the next player who will move).
 %
-nextState(Plyr, Move, State, NewState, NextPlyr):- opponent(Plyr, Opponent), setMove(Plyr, Opponent, State, NewState), (moves(Opponent, NewState, MvList), MvList \= [], NextPlyr is Opponent); NextPlyr is Plyr.
+nextState(Plyr, Move, State, NewState, NextPlyr):-
+	findall(Disks, testmoves(Move, Plyr, State, [Disks]), Pieces), 
+	setAll([Move|Pieces], State, NewState, Plyr),
+	opponent(Plyr, Opponent),
+	moves(Opponent, NewState, MvList),
+	MvList \= [],
+	NextPlyr is Opponent.
 
-%setMove(Plyr, Opponent, State, NewState):- 
+nextState(Plyr, Move, State, NewState, NextPlyr):-
+	findall(Disks, testmoves(Move, Plyr, State, [Disks]), Pieces),
+	setAll([Move|Pieces], State, NewState, Plyr), 
+	opponent(Plyr, Opponent), 
+	moves(Opponent, NewState, MvList), 
+	MvList == [],
+	NextPlyr is Plyr.
+	
 setAll([], State, State, _).
 setAll([Disk|Disks], State, NewState, Plyr):- set(State, NS, Disk, Plyr), setAll(Disks, NS, NewState, Plyr).
 
@@ -178,24 +193,18 @@ setAll([Disk|Disks], State, NewState, Plyr):- set(State, NS, Disk, Plyr), setAll
 %% define validmove(Plyr,State,Proposed). 
 %   - true if Proposed move by Plyr is valid at State.
 
-validmove(Plyr, State, Proposed):- testEast(Proposed, Plyr, State, _);
-	 							testWest(Proposed, Plyr, State, _);
-								testSouth(Proposed, Plyr, State, _); 
-								testNorth(Proposed, Plyr, State, _);
-								testSouthEast(Proposed, Plyr, State, _);
-								testSouthWest(Proposed, Plyr, State, _);
-								testNorthEast(Proposed, Plyr, State, _);
-								testNorthWest(Proposed, Plyr, State, _).
+%[[., ., ., ., ., .],[1, ., 1, ., 1, .],[2, 2, 1, 1, ., .],[., ., 1, 1, ., .],[., ., 1, ., ., .],[., ., 2, ., ., .]]
+validmove(Plyr, State, Proposed):- testmoves(Proposed, Plyr, State,_).
 
-testEast([X,Y], Plyr, State, Disks):- get(State, [X,Y], V), V == '.', opponent(Plyr, Opponent), X1 is X + 1, get(State, [X1,Y], O), O == Opponent, sequenceWithEnd(State, [X1,Y], 1, 0, Opponent, Plyr, Disks). %East
-testWest([X,Y], Plyr, State, Disks):- get(State, [X,Y], V), V == '.', opponent(Plyr, Opponent), X1 is X - 1, get(State, [X1,Y], O), O == Opponent, sequenceWithEnd(State, [X1,Y], -1, 0, Opponent, Plyr, Disks). %West
-testSouth([X,Y], Plyr, State, Disks):- get(State, [X,Y], V), V == '.', opponent(Plyr, Opponent), Y1 is Y + 1, get(State, [X,Y1], O), O == Opponent, sequenceWithEnd(State, [X,Y1], 0, 1, Opponent, Plyr, Disks). %South
-testNorth([X,Y], Plyr, State, Disks):- get(State, [X,Y], V), V == '.', opponent(Plyr, Opponent), Y1 is Y - 1, get(State, [X,Y1], O), O == Opponent, sequenceWithEnd(State, [X,Y1], 0, -1, Opponent, Plyr, Disks). %North
-testSouthEast([X,Y], Plyr, State, Disks):- get(State, [X,Y], V), V == '.', opponent(Plyr, Opponent), X1 is X + 1, Y1 is Y + 1, get(State, [X1,Y1], O), O == Opponent, sequenceWithEnd(State, [X1,Y1], 1, 1, Opponent, Plyr, Disks). %SouthEast
-testNorthEast([X,Y], Plyr, State, Disks):- get(State, [X,Y], V), V == '.', opponent(Plyr, Opponent), X1 is X + 1, Y1 is Y - 1, get(State, [X1,Y1], O), O == Opponent, sequenceWithEnd(State, [X1,Y1], 1, -1, Opponent, Plyr, Disks). %NorthEast
-testSouthWest([X,Y], Plyr, State, Disks):- get(State, [X,Y], V), V == '.', opponent(Plyr, Opponent), X1 is X - 1, Y1 is Y + 1, get(State, [X1,Y1], O), O == Opponent,sequenceWithEnd(State, [X1,Y1], -1, 1, Opponent, Plyr, Disks). %SouthWest
-testNorthWest([X,Y], Plyr, State, Disks):- get(State, [X,Y], V), V == '.', opponent(Plyr, Opponent), X1 is X - 1, Y1 is Y - 1, get(State, [X1,Y1], O), O == Opponent,sequenceWithEnd(State, [X1,Y1], -1, -1, Opponent, Plyr, Disks).	%NorthWest
-
+testmoves([X,Y], Plyr, State, Disks):- get(State, [X,Y], V), V = '.', opponent(Plyr, Opponent), (
+	E is X + 1, get(State, [E,Y], O), O = Opponent, sequenceWithEnd(State, [E,Y], 1, 0, Opponent, Plyr, Disks); %East
+	W is X - 1, get(State, [W,Y], O), O = Opponent, sequenceWithEnd(State, [W,Y], -1, 0, Opponent, Plyr, Disks); %West
+	S is Y + 1, get(State, [X,S], O), O = Opponent, sequenceWithEnd(State, [X,S], 0, 1, Opponent, Plyr, Disks); %South
+	N is Y - 1, get(State, [X,N], O), O = Opponent, sequenceWithEnd(State, [X,N], 0, -1, Opponent, Plyr, Disks); %North
+	SE1 is X + 1, SE2 is Y + 1, get(State, [SE1,SE2], O), O = Opponent, sequenceWithEnd(State, [SE1,SE2], 1, 1, Opponent, Plyr, Disks); %SouthEast
+	NE1 is X + 1, NE2 is Y - 1, get(State, [NE1,NE2], O), O = Opponent, sequenceWithEnd(State, [NE1,NE2], 1, -1, Opponent, Plyr, Disks); %NorthEast
+	SW1 is X - 1, SW2 is Y + 1, get(State, [SW1,SW2], O), O = Opponent,sequenceWithEnd(State, [SW1,SW2], -1, 1, Opponent, Plyr, Disks); %SouthWest
+	NW1 is X - 1, NW2 is Y - 1, get(State, [NW1,NW2], O), O = Opponent,sequenceWithEnd(State, [NW1,NW2], -1, -1, Opponent, Plyr, Disks)).	%NorthWest
 
 sequenceWithEnd(State, [X,Y], _, _, _, StopN, []):- get(State, [X,Y],V), V==StopN.
 sequenceWithEnd(State, [X,Y], XS, YS, SeqN, StopN, [[X,Y]|Disks]):- get(State, [X,Y],V), V==SeqN, X1 is X + XS, Y1 is Y + YS, sequenceWithEnd(State, [X1,Y1], XS,YS, SeqN, StopN, Disks).
@@ -211,8 +220,10 @@ sequenceWithEnd(State, [X,Y], XS, YS, SeqN, StopN, [[X,Y]|Disks]):- get(State, [
 %          the value of state (see handout on ideas about
 %          good heuristics.
 
-
-
+h(State,100) :- winner(State,1), !.
+h(State,-100) :- winner(State,2), !.
+h(State,0) :- tie(State), !.
+h(_,0).
 
 % DO NOT CHANGE THIS BLOCK OF COMMENTS.
 %
@@ -222,7 +233,7 @@ sequenceWithEnd(State, [X,Y], XS, YS, SeqN, StopN, [[X,Y]|Disks]):- get(State, [
 %   - returns a value B that is less than the actual or heuristic value
 %     of all states.
 
-
+lowerBound(-150).
 
 
 
@@ -234,7 +245,7 @@ sequenceWithEnd(State, [X,Y], XS, YS, SeqN, StopN, [[X,Y]|Disks]):- get(State, [
 %   - returns a value B that is greater than the actual or heuristic value
 %     of all states.
 
-
+upperBound(150).
 
 
 
